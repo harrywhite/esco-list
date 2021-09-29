@@ -1,5 +1,5 @@
 import React, { useReducer, Fragment } from 'react'
-import { withStyles } from '@material-ui/core/styles'
+import { makeStyles } from '@material-ui/core/styles'
 import List from '@material-ui/core/List'
 import Checkbox from '@material-ui/core/Checkbox'
 import ListItem from '@material-ui/core/ListItem'
@@ -11,7 +11,7 @@ import ExpandMore from '@material-ui/icons/ExpandMore'
 import Badge from '@material-ui/core/Badge'
 import Spinner from './Spinner'
 
-const styles = theme => ({
+const useStyles = makeStyles(theme => ({
   listCheckboxRoot: {
     minWidth: 36
   },
@@ -21,9 +21,10 @@ const styles = theme => ({
   listItemText: {
     marginLeft: 12
   }
-})
+}))
 
-export const EscoOccupationList = (props) => {
+export default function EscoOccupationList (props) {
+  const classes = useStyles()
   const initialState = {
     openOccupations: [], // Array of uris,
     selectedOccupations: [], // Array of occupations
@@ -32,14 +33,13 @@ export const EscoOccupationList = (props) => {
   const reducer = (state, newState) => ({ ...state, ...newState })
   const [state, setState] = useReducer(reducer, initialState)
 
-  const { classes, occupations, topLevel, fetchOccupationChildren, selectable, onOccupationCheck, level } = props
   const isOccupationOpen = (uri) => {
     if (state.openOccupations.length > 0) {
       return state.openOccupations.find(occu => occu === uri) != null
     } else return false
   }
 
-  const isWithinMaxParentLevel = (occu) => occu.code.length <= topLevel
+  const isWithinMaxParentLevel = (occu) => occu.code.length <= props.maxParentLevel
 
   const isOccupationChecked = (occupation) => props.selectedOccupations.find(selected => selected.code === occupation.code) != null
 
@@ -67,13 +67,13 @@ export const EscoOccupationList = (props) => {
   }
 
   const handleOccupationCheck = (checkedOccupation) => {
-    onOccupationCheck(checkedOccupation)
+    props.onOccupationCheck(checkedOccupation)
   }
 
   const handleChildrenOccupations = (openedOccupation) => {
     // Only need to fetch children, if they are not already fetched
     if (!state.children[openedOccupation.code]) {
-      fetchOccupationChildren(openedOccupation.uri).then(fetchedChildren => {
+      props.fetchOccupationChildren(openedOccupation.uri).then(fetchedChildren => {
         const newChildren = { ...state.children }
         newChildren[openedOccupation.code] = fetchedChildren
         setState({ children: newChildren })
@@ -82,7 +82,7 @@ export const EscoOccupationList = (props) => {
   }
 
   const renderSelect = (selectableOccupation) => {
-    if (selectable) {
+    if (props.selectable) {
       return (
         <ListItemIcon classes={{ root: classes.listCheckboxRoot }}>
           <Checkbox
@@ -125,13 +125,13 @@ export const EscoOccupationList = (props) => {
     } else return null
   }
 
-  const nestedLevel = level || 1
+  const nestedLevel = props.level || 1
   const nestedPadding = nestedLevel * 16
   const possibleNestedStyles = { paddingLeft: nestedPadding }
   return (
     <List>
-      {occupations &&
-        occupations.map((occupation, index) => {
+      {props.occupations &&
+        props.occupations.map((occupation, index) => {
           return (
             <Fragment key={`${occupation.uri}-${nestedLevel}`}>
               <ListItem button style={possibleNestedStyles}>
@@ -143,22 +143,20 @@ export const EscoOccupationList = (props) => {
                 <EscoOccupationList
                   occupations={state.children[occupation.code]}
                   selectedOccupations={props.selectedOccupations}
-                  topLevel={2}
+                  maxParentLevel={props.maxParentLevel}
                   level={nestedLevel + 1}
-                  selectable={selectable}
+                  selectable={props.selectable}
                   badges={props.badges}
-                  fetchOccupationChildren={fetchOccupationChildren}
-                  onOccupationCheck={onOccupationCheck}
+                  fetchOccupationChildren={props.fetchOccupationChildren}
+                  onOccupationCheck={props.onOccupationCheck}
                   classes={classes}
                 />
               </Collapse>
             </Fragment>
           )
         })}
-      {occupations == null &&
+      {props.occupations == null &&
         <Spinner centered />}
     </List>
   )
 }
-
-export default withStyles(styles)(EscoOccupationList)

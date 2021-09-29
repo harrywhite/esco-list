@@ -78,7 +78,7 @@ export default function App () {
         <Typography variant='h4'>ESCO lista</Typography>
         <EscoOccupationsList
           occupations={state.occupations}
-          topLevel={2}
+          maxParentLevel={2}
           selectable
           fetchOccupationChildren={fetchOccupationChildren}
           onOccupationCheck={handleOccupationCheck}
